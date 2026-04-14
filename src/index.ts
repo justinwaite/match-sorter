@@ -53,6 +53,12 @@ interface MatchSorterOptions<ItemType = unknown> {
   baseSort?: BaseSorter<ItemType>
   keepDiacritics?: boolean
   sorter?: Sorter<ItemType>
+  returnRankInfo?: boolean
+}
+interface MatchSorterRankInfoOptions<
+  ItemType = unknown,
+> extends MatchSorterOptions<ItemType> {
+  returnRankInfo: true
 }
 type IndexableByString = Record<string, unknown>
 
@@ -82,17 +88,29 @@ const defaultBaseSortFn: BaseSorter<unknown> = (a, b) =>
 function matchSorter<ItemType = string>(
   items: ReadonlyArray<ItemType>,
   value: string,
+  options: MatchSorterRankInfoOptions<ItemType>,
+): Array<RankedItem<ItemType>>
+function matchSorter<ItemType = string>(
+  items: ReadonlyArray<ItemType>,
+  value: string,
+  options?: MatchSorterOptions<ItemType>,
+): Array<ItemType>
+function matchSorter<ItemType = string>(
+  items: ReadonlyArray<ItemType>,
+  value: string,
   options: MatchSorterOptions<ItemType> = {},
-): Array<ItemType> {
+): Array<ItemType> | Array<RankedItem<ItemType>> {
   const {
     keys,
     threshold = rankings.MATCHES,
     baseSort = defaultBaseSortFn,
     sorter = matchedItems =>
       matchedItems.sort((a, b) => sortRankedValues(a, b, baseSort)),
+    returnRankInfo = false,
   } = options
   const matchedItems = items.reduce(reduceItemsToRanked, [])
-  return sorter(matchedItems).map(({item}) => item)
+  const rankedItems = sorter(matchedItems)
+  return returnRankInfo ? rankedItems : rankedItems.map(({item}) => item)
 
   function reduceItemsToRanked(
     matches: Array<RankedItem<ItemType>>,
@@ -524,10 +542,12 @@ export {matchSorter, rankings, defaultBaseSortFn, getItemValues}
 
 export type {
   MatchSorterOptions,
+  MatchSorterRankInfoOptions,
   KeyAttributesOptions,
   KeyOption,
   KeyAttributes,
   RankingInfo,
+  RankedItem,
   ValueGetterKey,
 }
 

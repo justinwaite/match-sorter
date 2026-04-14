@@ -1,4 +1,4 @@
-import {matchSorter, rankings, MatchSorterOptions} from '../'
+import {matchSorter, rankings, MatchSorterOptions, type RankedItem} from '../'
 
 type TestCase = {
   input: [Array<unknown>, string, MatchSorterOptions?]
@@ -662,6 +662,49 @@ for (const [
     test(title, testFn)
   }
 }
+
+test('can return ranked items with ranking metadata attached', () => {
+  const rankedResults: Array<RankedItem<{tea: string; alias: string}>> =
+    matchSorter(
+      [
+        {tea: 'Earl Grey', alias: 'A'},
+        {tea: 'Assam', alias: 'B'},
+        {tea: 'Black', alias: 'C'},
+      ],
+      'A',
+      {
+        keys: ['tea', {maxRanking: rankings.STARTS_WITH, key: 'alias'}],
+        returnRankInfo: true,
+      },
+    )
+
+  expect(rankedResults).toEqual([
+    {
+      item: {tea: 'Assam', alias: 'B'},
+      rankedValue: 'Assam',
+      rank: rankings.STARTS_WITH,
+      keyIndex: 0,
+      keyThreshold: undefined,
+      index: 1,
+    },
+    {
+      item: {tea: 'Earl Grey', alias: 'A'},
+      rankedValue: 'A',
+      rank: rankings.STARTS_WITH,
+      keyIndex: 1,
+      keyThreshold: undefined,
+      index: 0,
+    },
+    {
+      item: {tea: 'Black', alias: 'C'},
+      rankedValue: 'Black',
+      rank: rankings.CONTAINS,
+      keyIndex: 0,
+      keyThreshold: undefined,
+      index: 2,
+    },
+  ])
+})
 
 /*
 eslint
